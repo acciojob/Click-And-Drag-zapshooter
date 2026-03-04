@@ -3,7 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <title>Click and Drag</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    html { box-sizing: border-box; background: #1a1a2e; }
+    *, *:before, *:after { box-sizing: inherit; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: sans-serif;
+      font-size: 20px;
+      margin: 0;
+    }
+    .items {
+      width: 800px;
+      height: 800px;
+      border: 2px solid rgba(255,255,255,0.2);
+      position: relative;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .items.active { cursor: grabbing; }
+    .item {
+      width: 120px;
+      height: 120px;
+      position: absolute;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      font-weight: 100;
+      color: rgba(0,0,0,0.3);
+      box-shadow: inset 0 0 0 6px rgba(0,0,0,0.15);
+      cursor: grab;
+      user-select: none;
+      border-radius: 4px;
+      transition: box-shadow 0.1s;
+    }
+    .item:active { cursor: grabbing; box-shadow: inset 0 0 0 6px rgba(0,0,0,0.15), 0 8px 24px rgba(0,0,0,0.4); }
+    .item:nth-child(9n+1) { background: dodgerblue; }
+    .item:nth-child(9n+2) { background: goldenrod; }
+    .item:nth-child(9n+3) { background: paleturquoise; }
+    .item:nth-child(9n+4) { background: gold; }
+    .item:nth-child(9n+5) { background: cadetblue; }
+    .item:nth-child(9n+6) { background: tomato; }
+    .item:nth-child(9n+7) { background: lightcoral; }
+    .item:nth-child(9n+8) { background: darkslateblue; }
+    .item:nth-child(9n+9) { background: rebeccapurple; }
+  </style>
 </head>
 <body>
   <div class="items">
@@ -34,40 +82,66 @@
     <div class="item item25">25</div>
   </div>
 
-<script>
-//Your code goes here 
-const slider = document.querySelector('.items');
-let isDown = false;
-let startX;
-let scrollLeftStart;
+  <script>
+    const container = document.querySelector('.items');
+    const items = document.querySelectorAll('.item');
+    const COLS = 5;
+    const ITEM_SIZE = 120;
+    const GAP = 40;
 
-slider.addEventListener('mousedown', (e) => {
-  isDown = true;
-  slider.classList.add('active');
-  startX = e.pageX - slider.offsetLeft;
-  scrollLeftStart = slider.scrollLeft;
-});
+    // Place items in a centered grid using absolute positioning from the start
+    const totalGridWidth = COLS * ITEM_SIZE + (COLS - 1) * GAP;
+    const rows = Math.ceil(items.length / COLS);
+    const totalGridHeight = rows * ITEM_SIZE + (rows - 1) * GAP;
+    const startX = (container.offsetWidth - totalGridWidth) / 2;
+    const startY = (container.offsetHeight - totalGridHeight) / 2;
 
-slider.addEventListener('mouseleave', () => {
-  isDown = false;
-  slider.classList.remove('active');
-});
+    items.forEach((item, index) => {
+      const col = index % COLS;
+      const row = Math.floor(index / COLS);
+      item.style.left = `${startX + col * (ITEM_SIZE + GAP)}px`;
+      item.style.top  = `${startY + row * (ITEM_SIZE + GAP)}px`;
+    });
 
-slider.addEventListener('mouseup', () => {
-  isDown = false;
-  slider.classList.remove('active');
-});
+    // Drag state
+    let selectedItem = null;
+    let offsetX = 0;
+    let offsetY = 0;
 
-slider.addEventListener('mousemove', (e) => {
-  if (!isDown) return;
-  e.preventDefault();
-  const x = e.pageX - slider.offsetLeft;
-  const walk = (x - startX) * 3; // Multiply by 3 for smoother/faster scrolling
-  slider.scrollLeft = scrollLeftStart - walk;
-});
+    items.forEach(item => {
+      item.addEventListener('mousedown', e => {
+        selectedItem = item;
+        const itemRect = item.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        offsetX = e.clientX - itemRect.left;
+        offsetY = e.clientY - itemRect.top;
+        item.style.zIndex = '1000';
+        container.classList.add('active');
+        e.preventDefault();
+      });
+    });
 
-	
-</script>
+    document.addEventListener('mousemove', e => {
+      if (!selectedItem) return;
+      const containerRect = container.getBoundingClientRect();
+      let newLeft = e.clientX - containerRect.left - offsetX;
+      let newTop  = e.clientY - containerRect.top  - offsetY;
 
-  </body>
+      // Clamp within container bounds
+      newLeft = Math.max(0, Math.min(newLeft, container.clientWidth  - selectedItem.offsetWidth));
+      newTop  = Math.max(0, Math.min(newTop,  container.clientHeight - selectedItem.offsetHeight));
+
+      selectedItem.style.left = `${newLeft}px`;
+      selectedItem.style.top  = `${newTop}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (selectedItem) {
+        selectedItem.style.zIndex = '';
+        container.classList.remove('active');
+        selectedItem = null;
+      }
+    });
+  </script>
+</body>
 </html>
